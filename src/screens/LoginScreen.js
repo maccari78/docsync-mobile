@@ -26,9 +26,8 @@ export default function LoginScreen({ navigation }) {
     setLoading(true);
     try {
       const data = await authService.login(email, password);
-      Alert.alert('¡Éxito!', `Bienvenido ${data.user.name}`);
-      // Aquí navegarías a la siguiente pantalla
-      console.log('Login exitoso:', data);
+      // Navegar al Dashboard
+      navigation.replace('Dashboard');
     } catch (error) {
       console.error('Error login:', error);
       Alert.alert('Error', 'Email o contraseña incorrectos');
