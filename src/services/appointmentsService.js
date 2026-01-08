@@ -30,4 +30,9 @@ export const appointmentsService = {
     const response = await api.put(`/appointments/${id}`, { appointment: data });
     return response.data;
   },
+
+  create: async (appointmentData) => {
+    const response = await api.post('/appointments', { appointment: appointmentData });
+    return response.data;
+  },
 };

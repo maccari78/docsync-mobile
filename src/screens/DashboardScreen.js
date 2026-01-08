@@ -82,6 +82,13 @@ export default function DashboardScreen({ navigation }) {
       </View>
 
       <TouchableOpacity
+        style={[styles.button, styles.newAppointmentButton]}
+        onPress={() => navigation.navigate('NewAppointment')}
+      >
+        <Text style={styles.buttonText}>+ Solicitar Nuevo Turno</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
         style={styles.button}
         onPress={() => navigation.navigate("Appointments")}
       >
@@ -171,5 +178,8 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "bold",
+  },
+  newAppointmentButton: {
+    backgroundColor: '#34C759',
   },
 });
