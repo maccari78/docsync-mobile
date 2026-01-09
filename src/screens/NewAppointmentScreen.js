@@ -92,14 +92,17 @@ export default function NewAppointmentScreen({ navigation }) {
       };
 
       await appointmentsService.create(appointmentData);
-      
+
       Alert.alert(
         'Éxito',
         'Turno solicitado correctamente',
         [
           {
             text: 'OK',
-            onPress: () => navigation.goBack(),
+            onPress: () => {
+              // Navigate to Appointments and force refresh
+              navigation.navigate('Appointments');
+            },
           },
         ]
       );
@@ -122,10 +125,16 @@ export default function NewAppointmentScreen({ navigation }) {
   const getNextDays = () => {
     const days = [];
     const today = new Date();
+
     for (let i = 1; i <= 30; i++) {
       const date = new Date(today);
       date.setDate(today.getDate() + i);
-      days.push(date.toISOString().split('T')[0]);
+      // Use local date components to avoid timezone conversion
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const dateString = `${year}-${month}-${day}`;
+      days.push(dateString);
     }
     return days;
   };
@@ -230,10 +239,12 @@ export default function NewAppointmentScreen({ navigation }) {
             <Text style={styles.sectionTitle}>3. Fecha *</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               {getNextDays().slice(0, 10).map((date) => {
-                const dateObj = new Date(date);
-                const day = dateObj.getDate();
-                const month = dateObj.toLocaleDateString('es-AR', { month: 'short' });
-                
+                // Parse date string directly to avoid timezone issues
+                const [year, month, day] = date.split('-');
+                const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
+                                   'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+                const monthName = monthNames[parseInt(month, 10) - 1];
+
                 return (
                   <TouchableOpacity
                     key={date}
@@ -257,7 +268,7 @@ export default function NewAppointmentScreen({ navigation }) {
                         selectedDate === date && styles.chipTextSelected,
                       ]}
                     >
-                      {month}
+                      {monthName}
                     </Text>
                   </TouchableOpacity>
                 );
@@ -306,11 +317,16 @@ export default function NewAppointmentScreen({ navigation }) {
                 👨‍⚕️ {selectedProfessional.name}
               </Text>
               <Text style={styles.summaryText}>
-                📅 {new Date(selectedDate).toLocaleDateString('es-AR', {
-                  weekday: 'long',
-                  day: 'numeric',
-                  month: 'long',
-                })}
+                📅 {(() => {
+                  // Parse date string directly to avoid timezone issues
+                  const [year, month, day] = selectedDate.split('-');
+                  const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                  return date.toLocaleDateString('es-AR', {
+                    weekday: 'long',
+                    day: 'numeric',
+                    month: 'long',
+                  });
+                })()}
               </Text>
               <Text style={styles.summaryText}>
                 🕐 {selectedTime} hs

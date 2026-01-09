@@ -124,7 +124,11 @@ export default function AppointmentDetailScreen({ route, navigation }) {
   };
 
   const formatDate = (dateString) => {
-    const date = new Date(dateString);
+    // Parse date string directly to avoid timezone issues
+    // dateString comes as "2026-01-11" from API
+    const [year, month, day] = dateString.split('-');
+    // Create date with local timezone
+    const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
     return date.toLocaleDateString('es-AR', {
       weekday: 'long',
       day: '2-digit',

@@ -21,6 +21,14 @@ export default function AppointmentsScreen({ navigation }) {
     loadAppointments();
   }, []);
 
+  // Refresh when screen comes into focus
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      loadAppointments();
+    });
+    return unsubscribe;
+  }, [navigation]);
+
   useEffect(() => {
     filterAppointments();
   }, [filter, appointments]);
@@ -83,12 +91,10 @@ export default function AppointmentsScreen({ navigation }) {
   };
 
   const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-AR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    });
+    // Parse date string directly to avoid timezone issues
+    // dateString comes as "2026-01-11" from API
+    const [year, month, day] = dateString.split('-');
+    return `${day}/${month}/${year}`;
   };
 
   const renderAppointmentCard = ({ item }) => (

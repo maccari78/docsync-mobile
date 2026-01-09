@@ -18,6 +18,14 @@ export default function DashboardScreen({ navigation }) {
     loadDashboard();
   }, []);
 
+  // Refresh when screen comes into focus
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      loadDashboard();
+    });
+    return unsubscribe;
+  }, [navigation]);
+
   const loadDashboard = async () => {
     try {
       const currentUser = await authService.getCurrentUser();
