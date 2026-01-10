@@ -12,6 +12,8 @@ import {
 import { appointmentsService } from '../services/appointmentsService';
 import { professionalsService } from '../services/professionalsService';
 import { clinicsService } from '../services/clinicsService';
+import { patientsService } from '../services/patientsService';
+import { authService } from '../services/api';
 
 export default function NewAppointmentScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
@@ -19,15 +21,32 @@ export default function NewAppointmentScreen({ navigation }) {
   const [allProfessionals, setAllProfessionals] = useState([]);
   const [filteredProfessionals, setFilteredProfessionals] = useState([]);
   const [clinics, setClinics] = useState([]);
-  
+  const [patients, setPatients] = useState([]);
+  const [isNonPatient, setIsNonPatient] = useState(false);
+
   const [selectedClinic, setSelectedClinic] = useState(null);
   const [selectedProfessional, setSelectedProfessional] = useState(null);
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
+  const [selectedPatient, setSelectedPatient] = useState(null);
 
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    checkUserRole();
+  }, []);
+
+  const checkUserRole = async () => {
+    try {
+      const user = await authService.getCurrentUser();
+      setIsNonPatient(user?.role !== 'patient');
+    } catch (error) {
+      console.error('Error checking user role:', error);
+      setIsNonPatient(false); // Default a comportamiento de paciente
+    }
+  };
 
   useEffect(() => {
     if (selectedClinic) {
@@ -49,12 +68,25 @@ export default function NewAppointmentScreen({ navigation }) {
 
   const loadData = async () => {
     try {
-      const [profsData, clinicsData] = await Promise.all([
+      const user = await authService.getCurrentUser();
+      const fetchPatients = user?.role !== 'patient';
+
+      const promises = [
         professionalsService.getAll(),
         clinicsService.getAll(),
-      ]);
-      setAllProfessionals(profsData);
-      setClinics(clinicsData);
+      ];
+
+      if (fetchPatients) {
+        promises.push(patientsService.getAll());
+      }
+
+      const results = await Promise.all(promises);
+      setAllProfessionals(results[0]);
+      setClinics(results[1]);
+
+      if (fetchPatients && results[2]) {
+        setPatients(results[2]);
+      }
     } catch (error) {
       console.error('Error loading data:', error);
       Alert.alert('Error', 'No se pudo cargar la información');
@@ -65,6 +97,10 @@ export default function NewAppointmentScreen({ navigation }) {
 
   const handleSubmit = async () => {
     // Validaciones
+    if (isNonPatient && !selectedPatient) {
+      Alert.alert('Error', 'Por favor selecciona un paciente');
+      return;
+    }
     if (!selectedClinic) {
       Alert.alert('Error', 'Por favor selecciona una clínica');
       return;
@@ -90,6 +126,11 @@ export default function NewAppointmentScreen({ navigation }) {
         date: selectedDate,
         time: selectedTime,
       };
+
+      // Agregar patient_id si es no-paciente
+      if (isNonPatient && selectedPatient) {
+        appointmentData.patient_id = selectedPatient.id;
+      }
 
       await appointmentsService.create(appointmentData);
 
@@ -161,37 +202,87 @@ export default function NewAppointmentScreen({ navigation }) {
       </View>
 
       <ScrollView style={styles.content}>
-        {/* Clínica - PRIMERO */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>1. Clínica *</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {clinics.map((clinic) => (
-              <TouchableOpacity
-                key={clinic.id}
-                style={[
-                  styles.chip,
-                  selectedClinic?.id === clinic.id && styles.chipSelected,
-                ]}
-                onPress={() => setSelectedClinic(clinic)}
-              >
-                <Text
-                  style={[
-                    styles.chipText,
-                    selectedClinic?.id === clinic.id && styles.chipTextSelected,
-                  ]}
-                >
-                  {clinic.name}
+        {/* Paciente - STEP 0 (solo para admin/secretary/professional) */}
+        {isNonPatient && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>
+              1. Paciente * ({patients.length} disponibles)
+            </Text>
+            {patients.length > 0 ? (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {patients.map((patient) => (
+                  <TouchableOpacity
+                    key={patient.id}
+                    style={[
+                      styles.chip,
+                      selectedPatient?.id === patient.id && styles.chipSelected,
+                    ]}
+                    onPress={() => setSelectedPatient(patient)}
+                  >
+                    <Text
+                      style={[
+                        styles.chipText,
+                        selectedPatient?.id === patient.id && styles.chipTextSelected,
+                      ]}
+                    >
+                      {patient.name}
+                    </Text>
+                    {patient.email && (
+                      <Text
+                        style={[
+                          styles.chipSubtext,
+                          selectedPatient?.id === patient.id && styles.chipTextSelected,
+                        ]}
+                      >
+                        {patient.email}
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            ) : (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyText}>
+                  No hay pacientes disponibles
                 </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
+              </View>
+            )}
+          </View>
+        )}
 
-        {/* Profesional - SEGUNDO (solo si hay clínica seleccionada) */}
+        {/* Clínica - PRIMERO para pacientes, SEGUNDO para no-pacientes */}
+        {(!isNonPatient || selectedPatient) && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>{isNonPatient ? '2' : '1'}. Clínica *</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {clinics.map((clinic) => (
+                <TouchableOpacity
+                  key={clinic.id}
+                  style={[
+                    styles.chip,
+                    selectedClinic?.id === clinic.id && styles.chipSelected,
+                  ]}
+                  onPress={() => setSelectedClinic(clinic)}
+                >
+                  <Text
+                    style={[
+                      styles.chipText,
+                      selectedClinic?.id === clinic.id && styles.chipTextSelected,
+                    ]}
+                  >
+                    {clinic.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
+        {/* Profesional - SEGUNDO para pacientes, TERCERO para no-pacientes (solo si hay clínica seleccionada) */}
         {selectedClinic && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>
-              2. Profesional * ({filteredProfessionals.length} disponibles)
+              {isNonPatient ? '3' : '2'}. Profesional * ({filteredProfessionals.length} disponibles)
             </Text>
             {filteredProfessionals.length > 0 ? (
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -236,7 +327,7 @@ export default function NewAppointmentScreen({ navigation }) {
         {/* Fecha */}
         {selectedProfessional && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>3. Fecha *</Text>
+            <Text style={styles.sectionTitle}>{isNonPatient ? '4' : '3'}. Fecha *</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               {getNextDays().slice(0, 10).map((date) => {
                 // Parse date string directly to avoid timezone issues
@@ -280,7 +371,7 @@ export default function NewAppointmentScreen({ navigation }) {
         {/* Hora */}
         {selectedDate && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>4. Hora *</Text>
+            <Text style={styles.sectionTitle}>{isNonPatient ? '5' : '4'}. Hora *</Text>
             <View style={styles.timeGrid}>
               {timeSlots.map((time) => (
                 <TouchableOpacity
@@ -306,10 +397,16 @@ export default function NewAppointmentScreen({ navigation }) {
         )}
 
         {/* Resumen */}
-        {selectedProfessional && selectedClinic && selectedDate && selectedTime && (
+        {selectedProfessional && selectedClinic && selectedDate && selectedTime &&
+         (!isNonPatient || selectedPatient) && (
           <View style={styles.summarySection}>
             <Text style={styles.summaryTitle}>✓ Resumen del Turno</Text>
             <View style={styles.summaryCard}>
+              {isNonPatient && selectedPatient && (
+                <Text style={styles.summaryText}>
+                  👤 {selectedPatient.name}
+                </Text>
+              )}
               <Text style={styles.summaryText}>
                 🏥 {selectedClinic.name}
               </Text>
