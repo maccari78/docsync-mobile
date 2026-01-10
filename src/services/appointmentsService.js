@@ -35,4 +35,14 @@ export const appointmentsService = {
     const response = await api.post('/appointments', { appointment: appointmentData });
     return response.data;
   },
+
+  getAvailability: async (professionalId, date) => {
+    const response = await api.get('/appointments/availability', {
+      params: {
+        professional_id: professionalId,
+        date: date
+      }
+    });
+    return response.data;
+  },
 };

@@ -29,6 +29,8 @@ export default function NewAppointmentScreen({ navigation }) {
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
   const [selectedPatient, setSelectedPatient] = useState(null);
+  const [availableSlots, setAvailableSlots] = useState([]);
+  const [loadingAvailability, setLoadingAvailability] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -65,6 +67,36 @@ export default function NewAppointmentScreen({ navigation }) {
       setSelectedProfessional(null);
     }
   }, [selectedClinic, allProfessionals]);
+
+  useEffect(() => {
+    loadAvailability();
+    // Resetear selectedTime porque los slots disponibles cambiaron
+    setSelectedTime('');
+  }, [selectedProfessional, selectedDate]);
+
+  const loadAvailability = async () => {
+    // Reset si no hay professional o date
+    if (!selectedProfessional || !selectedDate) {
+      setAvailableSlots([]);
+      return;
+    }
+
+    setLoadingAvailability(true);
+    try {
+      const data = await appointmentsService.getAvailability(
+        selectedProfessional.id,
+        selectedDate
+      );
+      setAvailableSlots(data.available);
+    } catch (error) {
+      console.error('Error loading availability:', error);
+      Alert.alert('Error', 'No se pudo verificar disponibilidad. Mostrando todos los horarios.');
+      // Fallback: mostrar todos los horarios si falla
+      setAvailableSlots(timeSlots);
+    } finally {
+      setLoadingAvailability(false);
+    }
+  };
 
   const loadData = async () => {
     try {
@@ -141,8 +173,14 @@ export default function NewAppointmentScreen({ navigation }) {
           {
             text: 'OK',
             onPress: () => {
-              // Navigate to Appointments and force refresh
-              navigation.navigate('Appointments');
+              // Navigate to Appointments with Dashboard in stack
+              navigation.reset({
+                index: 1,
+                routes: [
+                  { name: 'Dashboard' },
+                  { name: 'Appointments' }
+                ],
+              });
             },
           },
         ]
@@ -371,28 +409,43 @@ export default function NewAppointmentScreen({ navigation }) {
         {/* Hora */}
         {selectedDate && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{isNonPatient ? '5' : '4'}. Hora *</Text>
-            <View style={styles.timeGrid}>
-              {timeSlots.map((time) => (
-                <TouchableOpacity
-                  key={time}
-                  style={[
-                    styles.timeChip,
-                    selectedTime === time && styles.chipSelected,
-                  ]}
-                  onPress={() => setSelectedTime(time)}
-                >
-                  <Text
+            <Text style={styles.sectionTitle}>
+              {isNonPatient ? '5' : '4'}. Hora * ({availableSlots.length} disponibles)
+            </Text>
+            {loadingAvailability ? (
+              <View style={styles.emptyState}>
+                <ActivityIndicator color="#007AFF" />
+                <Text style={styles.emptyText}>Verificando disponibilidad...</Text>
+              </View>
+            ) : availableSlots.length > 0 ? (
+              <View style={styles.timeGrid}>
+                {availableSlots.map((time) => (
+                  <TouchableOpacity
+                    key={time}
                     style={[
-                      styles.chipText,
-                      selectedTime === time && styles.chipTextSelected,
+                      styles.timeChip,
+                      selectedTime === time && styles.chipSelected,
                     ]}
+                    onPress={() => setSelectedTime(time)}
                   >
-                    {time}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+                    <Text
+                      style={[
+                        styles.chipText,
+                        selectedTime === time && styles.chipTextSelected,
+                      ]}
+                    >
+                      {time}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            ) : (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyText}>
+                  No hay horarios disponibles para esta fecha
+                </Text>
+              </View>
+            )}
           </View>
         )}
 
