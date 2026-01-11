@@ -244,16 +244,27 @@ export default function AppointmentDetailScreen({ route, navigation }) {
 
         {/* Actions */}
         <View style={styles.actionsSection}>
+          {/* Chat button - show if conversation exists and status is confirmed */}
+          {appointment.conversation && appointment.status === 'confirmed' && (
+            <TouchableOpacity
+              style={[styles.button, styles.chatButton]}
+              onPress={() => navigation.navigate('Chat', { conversation: appointment.conversation })}
+              disabled={loading}
+            >
+              <Text style={styles.buttonText}>💬 Ir al Chat</Text>
+            </TouchableOpacity>
+          )}
+
           {appointment.status === 'pending' && (
             <>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[styles.button, styles.confirmButton]}
                 onPress={handleConfirm}
                 disabled={loading}
               >
                 <Text style={styles.buttonText}>Confirmar Turno</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[styles.button, styles.cancelButton]}
                 onPress={handleCancel}
                 disabled={loading}
@@ -264,14 +275,14 @@ export default function AppointmentDetailScreen({ route, navigation }) {
           )}
           {appointment.status === 'confirmed' && (
             <>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[styles.button, styles.completeButton]}
                 onPress={handleComplete}
                 disabled={loading}
               >
                 <Text style={styles.buttonText}>Marcar como Completado</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[styles.button, styles.cancelButton]}
                 onPress={handleCancel}
                 disabled={loading}
@@ -411,6 +422,9 @@ const styles = StyleSheet.create({
   },
   completeButton: {
     backgroundColor: '#34C759',
+  },
+  chatButton: {
+    backgroundColor: '#5856D6',
   },
   buttonText: {
     color: '#fff',

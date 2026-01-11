@@ -104,6 +104,13 @@ export default function DashboardScreen({ navigation }) {
       </TouchableOpacity>
 
       <TouchableOpacity
+        style={[styles.button, styles.chatButton]}
+        onPress={() => navigation.navigate("ConversationsList")}
+      >
+        <Text style={styles.buttonText}>💬 Mis Chats</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
         style={[styles.button, styles.logoutButton]}
         onPress={handleLogout}
       >
@@ -189,5 +196,8 @@ const styles = StyleSheet.create({
   },
   newAppointmentButton: {
     backgroundColor: '#34C759',
+  },
+  chatButton: {
+    backgroundColor: '#5856D6',
   },
 });
