@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  Linking,
 } from 'react-native';
 import { appointmentsService } from '../services/appointmentsService';
 
@@ -84,6 +85,43 @@ export default function AppointmentDetailScreen({ route, navigation }) {
             } catch (error) {
               console.error('Error completing appointment:', error);
               Alert.alert('Error', 'No se pudo completar el turno');
+            } finally {
+              setLoading(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handlePayment = async () => {
+    Alert.alert(
+      'Pagar Turno',
+      `Se abrirá Stripe para procesar el pago de $${appointment.payment?.amount || '10.00'}`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Continuar',
+          onPress: async () => {
+            setLoading(true);
+            try {
+              const response = await appointmentsService.initiatePayment(appointment.id);
+
+              // Open Stripe Checkout URL in browser
+              const supported = await Linking.canOpenURL(response.checkout_url);
+              if (supported) {
+                await Linking.openURL(response.checkout_url);
+                Alert.alert(
+                  'Pago en Proceso',
+                  'Se ha abierto Stripe para procesar tu pago. Una vez completado, el estado se actualizará automáticamente.'
+                );
+              } else {
+                Alert.alert('Error', 'No se puede abrir el navegador');
+              }
+            } catch (error) {
+              console.error('Error initiating payment:', error);
+              const errorMessage = error.response?.data?.error || 'No se pudo iniciar el pago';
+              Alert.alert('Error', errorMessage);
             } finally {
               setLoading(false);
             }
@@ -242,8 +280,47 @@ export default function AppointmentDetailScreen({ route, navigation }) {
           </View>
         )}
 
+        {/* Payment Status */}
+        {appointment.payment && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Estado del Pago</Text>
+            <View style={styles.card}>
+              <View style={styles.infoRow}>
+                <Text style={styles.label}>Monto:</Text>
+                <Text style={styles.value}>${appointment.payment.amount}</Text>
+              </View>
+              <View style={styles.infoRow}>
+                <Text style={styles.label}>Estado:</Text>
+                <Text style={[
+                  styles.value,
+                  {
+                    color: appointment.payment.status === 'approved' ? '#34C759' :
+                           appointment.payment.status === 'rejected' ? '#FF3B30' : '#FF9500',
+                    fontWeight: 'bold'
+                  }
+                ]}>
+                  {appointment.payment.status === 'approved' ? 'Aprobado' :
+                   appointment.payment.status === 'rejected' ? 'Rechazado' : 'Pendiente'}
+                </Text>
+              </View>
+            </View>
+          </View>
+        )}
+
         {/* Actions */}
         <View style={styles.actionsSection}>
+          {/* Payment button - show if confirmed/completed and not paid */}
+          {(appointment.status === 'confirmed' || appointment.status === 'completed') &&
+           appointment.payment?.status !== 'approved' && (
+            <TouchableOpacity
+              style={[styles.button, styles.payButton]}
+              onPress={handlePayment}
+              disabled={loading}
+            >
+              <Text style={styles.buttonText}>💳 Pagar Turno</Text>
+            </TouchableOpacity>
+          )}
+
           {/* Chat button - show if conversation exists and status is confirmed */}
           {appointment.conversation && appointment.status === 'confirmed' && (
             <TouchableOpacity
@@ -425,6 +502,9 @@ const styles = StyleSheet.create({
   },
   chatButton: {
     backgroundColor: '#5856D6',
+  },
+  payButton: {
+    backgroundColor: '#FF9500',
   },
   buttonText: {
     color: '#fff',

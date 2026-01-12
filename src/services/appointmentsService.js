@@ -45,4 +45,9 @@ export const appointmentsService = {
     });
     return response.data;
   },
+
+  initiatePayment: async (id) => {
+    const response = await api.post(`/appointments/${id}/initiate_payment`);
+    return response.data;
+  },
 };
