@@ -11,11 +11,13 @@ import {
   Platform,
 } from 'react-native';
 import { authService } from '../services/api';
+import { googleAuthService } from '../services/googleAuthService';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('admin@example.com');
   const [password, setPassword] = useState('password123');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -33,6 +35,25 @@ export default function LoginScreen({ navigation }) {
       Alert.alert('Error', 'Email o contraseña incorrectos');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setGoogleLoading(true);
+    try {
+      await googleAuthService.signIn();
+      // Navigate to Dashboard on success
+      navigation.replace('Dashboard');
+    } catch (error) {
+      // Don't show alert if user cancelled
+      if (error.code === 'SIGN_IN_CANCELLED') {
+        return;
+      }
+
+      console.error('Google login error:', error);
+      Alert.alert('Error', 'No se pudo iniciar sesión con Google. Por favor intenta nuevamente.');
+    } finally {
+      setGoogleLoading(false);
     }
   };
 
@@ -71,6 +92,26 @@ export default function LoginScreen({ navigation }) {
             <ActivityIndicator color="#fff" />
           ) : (
             <Text style={styles.buttonText}>Iniciar Sesión</Text>
+          )}
+        </TouchableOpacity>
+
+        {/* Divider */}
+        <View style={styles.divider}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>O</Text>
+          <View style={styles.dividerLine} />
+        </View>
+
+        {/* Google Sign-In Button */}
+        <TouchableOpacity
+          style={[styles.googleButton, googleLoading && styles.buttonDisabled]}
+          onPress={handleGoogleLogin}
+          disabled={googleLoading || loading}
+        >
+          {googleLoading ? (
+            <ActivityIndicator color="#333" />
+          ) : (
+            <Text style={styles.googleButtonText}>Continuar con Google</Text>
           )}
         </TouchableOpacity>
 
@@ -134,5 +175,33 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#999',
     fontSize: 12,
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 20,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#ddd',
+  },
+  dividerText: {
+    marginHorizontal: 10,
+    color: '#999',
+    fontSize: 14,
+  },
+  googleButton: {
+    backgroundColor: '#fff',
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  googleButtonText: {
+    color: '#333',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

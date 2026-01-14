@@ -8,6 +8,7 @@ import {
 } from "react-native";
 import { authService } from "../services/api";
 import api from "../services/api";
+import { googleAuthService } from "../services/googleAuthService";
 
 export default function DashboardScreen({ navigation }) {
   const [user, setUser] = useState(null);
@@ -47,8 +48,24 @@ export default function DashboardScreen({ navigation }) {
   };
 
   const handleLogout = async () => {
-    await authService.logout();
-    navigation.replace("Login");
+    try {
+      // Check if user is signed in with Google
+      const isGoogleSignedIn = await googleAuthService.isSignedIn();
+
+      if (isGoogleSignedIn) {
+        // Sign out from Google
+        await googleAuthService.signOut();
+      } else {
+        // Regular email/password logout
+        await authService.logout();
+      }
+
+      navigation.replace("Login");
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Navigate to login anyway, even if logout fails
+      navigation.replace("Login");
+    }
   };
 
   if (loading) {

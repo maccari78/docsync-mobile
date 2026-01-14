@@ -16,6 +16,7 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.maccari78.docsyncmobile",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -24,6 +25,20 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.683662994531-e68duk2jnj1famoehj2ot8279q3b9gka"
+        }
+      ]
+    ],
+    "extra": {
+      "googleWebClientId": "683662994531-e68duk2jnj1famoehj2ot8279q3b9gka.apps.googleusercontent.com",
+      "eas": {
+        "projectId": "2d564048-cc34-4d1f-93e1-584080e28f97"
+      }
     }
   }
 }
