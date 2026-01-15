@@ -19,7 +19,8 @@ import { notificationsService } from '../services/notificationsService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function ChatScreen({ route, navigation }) {
-  const { conversation } = route.params;
+  const { conversation: initialConversation } = route.params;
+  const [conversation, setConversation] = useState(initialConversation);
   const [messages, setMessages] = useState([]);
   const [messageText, setMessageText] = useState('');
   const [loading, setLoading] = useState(true);
@@ -99,7 +100,11 @@ export default function ChatScreen({ route, navigation }) {
 
   const loadMessages = async () => {
     try {
-      const data = await conversationsService.getById(conversation.id);
+      const data = await conversationsService.getById(initialConversation.id);
+      // Update conversation with full data from API
+      if (data.conversation) {
+        setConversation(data.conversation);
+      }
       setMessages(data.messages || []);
     } catch (error) {
       console.error('Error loading messages:', error);
@@ -236,10 +241,14 @@ export default function ChatScreen({ route, navigation }) {
     >
       {/* Header con info de turno */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>{conversation.other_user.name}</Text>
-        <Text style={styles.headerSubtitle}>
-          📅 {conversation.appointment.date} - {conversation.appointment.time}
+        <Text style={styles.headerTitle}>
+          {conversation?.other_user?.name || 'Chat'}
         </Text>
+        {conversation?.appointment && (
+          <Text style={styles.headerSubtitle}>
+            📅 {conversation.appointment.date} - {conversation.appointment.time}
+          </Text>
+        )}
       </View>
 
       {/* Lista de mensajes */}
@@ -267,7 +276,7 @@ export default function ChatScreen({ route, navigation }) {
       {otherUserTyping && (
         <View style={styles.typingIndicator}>
           <Text style={styles.typingText}>
-            {conversation.other_user.name} está escribiendo...
+            {conversation?.other_user?.name || 'Alguien'} está escribiendo...
           </Text>
         </View>
       )}

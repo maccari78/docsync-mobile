@@ -48,5 +48,14 @@ export const conversationsService = {
    */
   sendTypingIndicator: async (conversationId) => {
     await api.post(`/conversations/${conversationId}/messages/typing`);
+  },
+
+  /**
+   * GET /api/v1/conversations/unread_count
+   * Obtiene el total de mensajes no leídos
+   */
+  getUnreadCount: async () => {
+    const response = await api.get('/conversations/unread_count');
+    return response.data.unread_count;
   }
 };

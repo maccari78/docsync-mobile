@@ -200,20 +200,28 @@ export default function NewAppointmentScreen({ navigation }) {
     '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00',
   ];
 
-  // Próximos 30 días
+  // Próximos 30 días hábiles (excluye sábados y domingos)
   const getNextDays = () => {
     const days = [];
     const today = new Date();
+    let daysAdded = 0;
+    let i = 1;
 
-    for (let i = 1; i <= 30; i++) {
+    while (daysAdded < 30) {
       const date = new Date(today);
       date.setDate(today.getDate() + i);
-      // Use local date components to avoid timezone conversion
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      const dateString = `${year}-${month}-${day}`;
-      days.push(dateString);
+      const dayOfWeek = date.getDay(); // 0 = domingo, 6 = sábado
+
+      // Solo agregar días de lunes a viernes
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const dateString = `${year}-${month}-${day}`;
+        days.push(dateString);
+        daysAdded++;
+      }
+      i++;
     }
     return days;
   };

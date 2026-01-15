@@ -9,11 +9,13 @@ import {
 import { authService } from "../services/api";
 import api from "../services/api";
 import { googleAuthService } from "../services/googleAuthService";
+import { conversationsService } from "../services/conversationsService";
 
 export default function DashboardScreen({ navigation }) {
   const [user, setUser] = useState(null);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     loadDashboard();
@@ -40,6 +42,15 @@ export default function DashboardScreen({ navigation }) {
         confirmed: response.data.filter((a) => a.status === "confirmed").length,
         completed: response.data.filter((a) => a.status === "completed").length,
       });
+
+      // Cargar conteo de mensajes no leídos
+      try {
+        const count = await conversationsService.getUnreadCount();
+        setUnreadCount(count);
+      } catch (e) {
+        // Silently fail if no conversations
+        setUnreadCount(0);
+      }
     } catch (error) {
       console.error("Error loading dashboard:", error);
     } finally {
@@ -124,7 +135,16 @@ export default function DashboardScreen({ navigation }) {
         style={[styles.button, styles.chatButton]}
         onPress={() => navigation.navigate("ConversationsList")}
       >
-        <Text style={styles.buttonText}>💬 Mis Chats</Text>
+        <View style={styles.chatButtonContent}>
+          <Text style={styles.buttonText}>💬 Mis Chats</Text>
+          {unreadCount > 0 && (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </Text>
+            </View>
+          )}
+        </View>
       </TouchableOpacity>
 
       <TouchableOpacity
@@ -216,5 +236,25 @@ const styles = StyleSheet.create({
   },
   chatButton: {
     backgroundColor: '#5856D6',
+  },
+  chatButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badge: {
+    backgroundColor: '#FF3B30',
+    borderRadius: 12,
+    minWidth: 24,
+    height: 24,
+    paddingHorizontal: 8,
+    marginLeft: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
 });

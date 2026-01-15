@@ -14,8 +14,8 @@ import { authService } from '../services/api';
 import { googleAuthService } from '../services/googleAuthService';
 
 export default function LoginScreen({ navigation }) {
-  const [email, setEmail] = useState('admin@example.com');
-  const [password, setPassword] = useState('password123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
@@ -78,9 +78,12 @@ export default function LoginScreen({ navigation }) {
         <TextInput
           style={styles.input}
           placeholder="Contraseña"
+          placeholderTextColor="#999"
           value={password}
           onChangeText={setPassword}
-          secureTextEntry
+          secureTextEntry={true}
+          textContentType="password"
+          autoComplete="password"
         />
 
         <TouchableOpacity
@@ -154,6 +157,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     borderWidth: 1,
     borderColor: '#ddd',
+    color: '#333',
   },
   button: {
     backgroundColor: '#007AFF',

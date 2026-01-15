@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,10 +10,30 @@ import {
   Linking,
 } from 'react-native';
 import { appointmentsService } from '../services/appointmentsService';
+import { authService } from '../services/api';
 
 export default function AppointmentDetailScreen({ route, navigation }) {
   const [appointment, setAppointment] = useState(route.params.appointment);
   const [loading, setLoading] = useState(false);
+  const [userRole, setUserRole] = useState(null);
+
+  useEffect(() => {
+    loadUserRole();
+  }, []);
+
+  const loadUserRole = async () => {
+    try {
+      const user = await authService.getCurrentUser();
+      setUserRole(user?.role);
+    } catch (error) {
+      console.error('Error loading user role:', error);
+    }
+  };
+
+  // Permission helpers
+  const canConfirm = () => ['admin', 'secretary'].includes(userRole);
+  const canCancel = () => ['admin', 'secretary', 'patient'].includes(userRole);
+  const canComplete = () => ['admin', 'secretary', 'professional'].includes(userRole);
 
   const handleConfirm = async () => {
     Alert.alert(
@@ -309,8 +329,8 @@ export default function AppointmentDetailScreen({ route, navigation }) {
 
         {/* Actions */}
         <View style={styles.actionsSection}>
-          {/* Payment button - show if confirmed/completed and not paid */}
-          {(appointment.status === 'confirmed' || appointment.status === 'completed') &&
+          {/* Payment button - show if confirmed and not paid (any user can pay) */}
+          {appointment.status === 'confirmed' &&
            appointment.payment?.status !== 'approved' && (
             <TouchableOpacity
               style={[styles.button, styles.payButton]}
@@ -332,41 +352,73 @@ export default function AppointmentDetailScreen({ route, navigation }) {
             </TouchableOpacity>
           )}
 
+          {/* Pending status actions */}
           {appointment.status === 'pending' && (
             <>
-              <TouchableOpacity
-                style={[styles.button, styles.confirmButton]}
-                onPress={handleConfirm}
-                disabled={loading}
-              >
-                <Text style={styles.buttonText}>Confirmar Turno</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.button, styles.cancelButton]}
-                onPress={handleCancel}
-                disabled={loading}
-              >
-                <Text style={styles.buttonText}>Cancelar Turno</Text>
-              </TouchableOpacity>
+              {/* Confirm button - only for admin/secretary */}
+              {canConfirm() && (
+                <TouchableOpacity
+                  style={[styles.button, styles.confirmButton]}
+                  onPress={handleConfirm}
+                  disabled={loading}
+                >
+                  <Text style={styles.buttonText}>Confirmar Turno</Text>
+                </TouchableOpacity>
+              )}
+              {/* Cancel button - for admin/secretary/patient */}
+              {canCancel() && (
+                <TouchableOpacity
+                  style={[styles.button, styles.cancelButton]}
+                  onPress={handleCancel}
+                  disabled={loading}
+                >
+                  <Text style={styles.buttonText}>Cancelar Turno</Text>
+                </TouchableOpacity>
+              )}
+              {/* Info for patients */}
+              {userRole === 'patient' && (
+                <View style={styles.infoBox}>
+                  <Text style={styles.infoText}>
+                    Tu turno está pendiente de confirmación por la secretaría.
+                  </Text>
+                </View>
+              )}
             </>
           )}
+
+          {/* Confirmed status actions */}
           {appointment.status === 'confirmed' && (
             <>
-              <TouchableOpacity
-                style={[styles.button, styles.completeButton]}
-                onPress={handleComplete}
-                disabled={loading}
-              >
-                <Text style={styles.buttonText}>Marcar como Completado</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.button, styles.cancelButton]}
-                onPress={handleCancel}
-                disabled={loading}
-              >
-                <Text style={styles.buttonText}>Cancelar Turno</Text>
-              </TouchableOpacity>
+              {/* Complete button - only for admin/secretary/professional */}
+              {canComplete() && (
+                <TouchableOpacity
+                  style={[styles.button, styles.completeButton]}
+                  onPress={handleComplete}
+                  disabled={loading}
+                >
+                  <Text style={styles.buttonText}>Marcar como Completado</Text>
+                </TouchableOpacity>
+              )}
+              {/* Cancel button - for admin/secretary/patient */}
+              {canCancel() && (
+                <TouchableOpacity
+                  style={[styles.button, styles.cancelButton]}
+                  onPress={handleCancel}
+                  disabled={loading}
+                >
+                  <Text style={styles.buttonText}>Cancelar Turno</Text>
+                </TouchableOpacity>
+              )}
             </>
+          )}
+
+          {/* Completed status - show payment success info */}
+          {appointment.status === 'completed' && appointment.payment?.status === 'approved' && (
+            <View style={styles.successBox}>
+              <Text style={styles.successText}>
+                ✅ Turno completado y pagado
+              </Text>
+            </View>
           )}
         </View>
 
@@ -510,5 +562,28 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  infoBox: {
+    backgroundColor: '#E3F2FD',
+    padding: 15,
+    borderRadius: 8,
+    marginTop: 10,
+  },
+  infoText: {
+    color: '#1565C0',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  successBox: {
+    backgroundColor: '#E8F5E9',
+    padding: 15,
+    borderRadius: 8,
+    marginTop: 10,
+  },
+  successText: {
+    color: '#2E7D32',
+    fontSize: 16,
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
 });

@@ -3,11 +3,17 @@ import Constants from 'expo-constants';
 import api from './api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Configure Google Sign-In
-GoogleSignin.configure({
-  webClientId: Constants.expoConfig.extra.googleWebClientId,
-  offlineAccess: true,
-});
+// Configure Google Sign-In (only if available - not in Expo Go)
+try {
+  if (typeof GoogleSignin.configure === 'function') {
+    GoogleSignin.configure({
+      webClientId: Constants.expoConfig?.extra?.googleWebClientId,
+      offlineAccess: true,
+    });
+  }
+} catch (e) {
+  // GoogleSignin not available in this environment
+}
 
 export const googleAuthService = {
   /**
@@ -82,9 +88,13 @@ export const googleAuthService = {
    */
   isSignedIn: async () => {
     try {
+      // Check if GoogleSignin methods are available (may not be in dev/Expo Go)
+      if (typeof GoogleSignin.isSignedIn !== 'function') {
+        return false;
+      }
       return await GoogleSignin.isSignedIn();
     } catch (error) {
-      console.error('Error checking Google sign-in status:', error);
+      // Silently return false - this is expected in development
       return false;
     }
   },
@@ -95,9 +105,11 @@ export const googleAuthService = {
    */
   getCurrentUser: async () => {
     try {
+      if (typeof GoogleSignin.getCurrentUser !== 'function') {
+        return null;
+      }
       return await GoogleSignin.getCurrentUser();
     } catch (error) {
-      console.error('Error getting current Google user:', error);
       return null;
     }
   }
