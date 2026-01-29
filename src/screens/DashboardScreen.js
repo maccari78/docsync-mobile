@@ -96,25 +96,37 @@ export default function DashboardScreen({ navigation }) {
       </View>
 
       <View style={styles.statsContainer}>
-        <View style={styles.statCard}>
+        <TouchableOpacity
+          style={styles.statCard}
+          onPress={() => navigation.navigate("Appointments", { initialFilter: 'all' })}
+        >
           <Text style={styles.statNumber}>{stats?.totalAppointments || 0}</Text>
           <Text style={styles.statLabel}>Total Turnos</Text>
-        </View>
+        </TouchableOpacity>
 
-        <View style={[styles.statCard, styles.statCardYellow]}>
+        <TouchableOpacity
+          style={[styles.statCard, styles.statCardYellow]}
+          onPress={() => navigation.navigate("Appointments", { initialFilter: 'pending' })}
+        >
           <Text style={styles.statNumber}>{stats?.pending || 0}</Text>
           <Text style={styles.statLabel}>Pendientes</Text>
-        </View>
+        </TouchableOpacity>
 
-        <View style={[styles.statCard, styles.statCardGreen]}>
+        <TouchableOpacity
+          style={[styles.statCard, styles.statCardGreen]}
+          onPress={() => navigation.navigate("Appointments", { initialFilter: 'confirmed' })}
+        >
           <Text style={styles.statNumber}>{stats?.confirmed || 0}</Text>
           <Text style={styles.statLabel}>Confirmados</Text>
-        </View>
+        </TouchableOpacity>
 
-        <View style={[styles.statCard, styles.statCardBlue]}>
+        <TouchableOpacity
+          style={[styles.statCard, styles.statCardBlue]}
+          onPress={() => navigation.navigate("Appointments", { initialFilter: 'completed' })}
+        >
           <Text style={styles.statNumber}>{stats?.completed || 0}</Text>
           <Text style={styles.statLabel}>Completados</Text>
-        </View>
+        </TouchableOpacity>
       </View>
 
       <TouchableOpacity
@@ -122,13 +134,6 @@ export default function DashboardScreen({ navigation }) {
         onPress={() => navigation.navigate('NewAppointment')}
       >
         <Text style={styles.buttonText}>+ Solicitar Nuevo Turno</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={styles.button}
-        onPress={() => navigation.navigate("Appointments")}
-      >
-        <Text style={styles.buttonText}>Ver Todos los Turnos</Text>
       </TouchableOpacity>
 
       <TouchableOpacity

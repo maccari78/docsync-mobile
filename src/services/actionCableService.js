@@ -15,7 +15,7 @@ class ActionCableService {
     }
 
     // Construir URL del WebSocket con token JWT como query param
-    const CABLE_URL = `ws://192.168.0.10:3000/cable?token=${token}`;
+    const CABLE_URL = `ws://192.168.0.7:3000/cable?token=${token}`;
     this.consumer = createConsumer(CABLE_URL);
     console.log('Action Cable: Connected to', CABLE_URL);
     return this.consumer;

@@ -10,24 +10,30 @@ import {
 } from 'react-native';
 import api from '../services/api';
 
-export default function AppointmentsScreen({ navigation }) {
+export default function AppointmentsScreen({ navigation, route }) {
+  const initialFilter = route.params?.initialFilter || 'all';
   const [appointments, setAppointments] = useState([]);
   const [filteredAppointments, setFilteredAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [filter, setFilter] = useState('all'); // all, pending, confirmed, completed, cancelled
+  const [filter, setFilter] = useState(initialFilter); // all, pending, confirmed, completed, cancelled
 
   useEffect(() => {
     loadAppointments();
   }, []);
 
-  // Refresh when screen comes into focus
+  // Refresh when screen comes into focus and update filter if changed
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
       loadAppointments();
+      // Update filter if navigating with a different initialFilter
+      const newFilter = route.params?.initialFilter;
+      if (newFilter && newFilter !== filter) {
+        setFilter(newFilter);
+      }
     });
     return unsubscribe;
-  }, [navigation]);
+  }, [navigation, route.params?.initialFilter]);
 
   useEffect(() => {
     filterAppointments();
