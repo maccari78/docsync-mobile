@@ -31,9 +31,10 @@ export default function AppointmentDetailScreen({ route, navigation }) {
   };
 
   // Permission helpers
-  const canConfirm = () => ['admin', 'secretary'].includes(userRole);
-  const canCancel = () => ['admin', 'secretary', 'patient'].includes(userRole);
+  const canConfirm = () => ['admin', 'secretary', 'professional'].includes(userRole);
+  const canCancel = () => ['admin', 'secretary', 'professional'].includes(userRole);
   const canComplete = () => ['admin', 'secretary', 'professional'].includes(userRole);
+  const isPaid = () => appointment.payment?.status === 'approved';
 
   const handleConfirm = async () => {
     Alert.alert(
@@ -365,7 +366,7 @@ export default function AppointmentDetailScreen({ route, navigation }) {
                   <Text style={styles.buttonText}>Confirmar Turno</Text>
                 </TouchableOpacity>
               )}
-              {/* Cancel button - for admin/secretary/patient */}
+              {/* Cancel button - only for admin/secretary */}
               {canCancel() && (
                 <TouchableOpacity
                   style={[styles.button, styles.cancelButton]}
@@ -380,6 +381,7 @@ export default function AppointmentDetailScreen({ route, navigation }) {
                 <View style={styles.infoBox}>
                   <Text style={styles.infoText}>
                     Tu turno está pendiente de confirmación por la secretaría.
+                    {'\n\n'}Si necesitas cancelar, por favor solicitalo a través del chat una vez que el turno esté confirmado.
                   </Text>
                 </View>
               )}
@@ -399,7 +401,7 @@ export default function AppointmentDetailScreen({ route, navigation }) {
                   <Text style={styles.buttonText}>Marcar como Completado</Text>
                 </TouchableOpacity>
               )}
-              {/* Cancel button - for admin/secretary/patient */}
+              {/* Cancel button - only for admin/secretary */}
               {canCancel() && (
                 <TouchableOpacity
                   style={[styles.button, styles.cancelButton]}
@@ -408,6 +410,14 @@ export default function AppointmentDetailScreen({ route, navigation }) {
                 >
                   <Text style={styles.buttonText}>Cancelar Turno</Text>
                 </TouchableOpacity>
+              )}
+              {/* Info for patients about cancellation */}
+              {userRole === 'patient' && (
+                <View style={styles.infoBox}>
+                  <Text style={styles.infoText}>
+                    ¿Necesitas cancelar tu turno? Por favor solicitalo a través del chat y la secretaría lo gestionará.
+                  </Text>
+                </View>
               )}
             </>
           )}
